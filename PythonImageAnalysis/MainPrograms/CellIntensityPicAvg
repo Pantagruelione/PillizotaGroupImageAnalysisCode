@@ -1,0 +1,83 @@
+import numpy
+import os
+import matplotlib as mpl
+from scipy import ndimage
+import matplotlib.backends.backend_pdf
+from Image_Analysis_Tools import *
+from Find_a_cell_function2 import *
+from Find_a_cell_function import *
+from sympy import *
+import re
+
+EveryCellIntensity=[]
+bgrounds=[]
+ImageAverages = []
+ImageStD = []
+Time = []
+t=0.00000
+float(t)
+
+#python orders files counting charachter by character. In the way that 250 comes before 40. Here I sort the images in a human way
+
+def sort_nicely( l ):
+
+    convert = lambda text: int(text) if text.isdigit() else text
+    alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ]
+    l.sort( key=alphanum_key )
+
+
+filenames=os.listdir("C:\Users\s1466203\Desktop\ThT and CCCP\\")
+
+sort_nicely(filenames)
+
+
+for file in filenames:
+    singleImageCellIntensity = []
+
+#I select only the images
+    if file.endswith("tiff"):
+
+
+        Image=plt.imread("C:\Users\s1466203\Desktop\ThT and CCCP\\"+file)
+#I apply the mask from the programme Find_a_cell_function2
+        mask = FindCell2(Image)
+#find the background
+        bground = Background(Image)
+
+#label each region
+        Label=label(mask)
+
+#measure the mean intensities and put them in two different lists that will be used to plot mean intensities of single cells and of each picture
+
+        for cell in measure.regionprops(Label,intensity_image=Image):
+            MeanCellIntensity=cell.mean_intensity
+            EveryCellIntensity.append(MeanCellIntensity-bground)
+            singleImageCellIntensity.append(MeanCellIntensity-bground)
+
+
+        bgrounds.append(bground)
+#computes the average of the cells in each picture
+        ImageAverages.append(np.average(singleImageCellIntensity))
+#computes the standard deviations of these measurements
+        ImageStD.append(np.std(singleImageCellIntensity))
+
+#each picture is taken every 10 seconds
+        t = t + (0.16666666)
+        print(t)
+        Time.append(t)
+        print(Time)
+
+
+plt.subplot(221)
+plt.plot(EveryCellIntensity, 'g^')
+plt.xlabel('Cells')
+plt.ylabel('Intensity')
+plt.subplot(223)
+plt.plot(bgrounds,'r^')
+plt.xlabel('Picture background')
+plt.ylabel('Intensity')
+plt.subplot(224)
+plt.errorbar(Time,ImageAverages, yerr=ImageStD, marker='o')
+plt.xlabel('Time [Min]')
+plt.ylabel('Cell average intensity')
+plt.show()
